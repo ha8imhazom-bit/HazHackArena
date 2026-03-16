@@ -1585,7 +1585,7 @@ async function sendImageToAI(input) {
   reader.readAsDataURL(file);
 }
 
-async function sendChat(){
+function sendChat(){
   const inp = document.getElementById('chatInput');
   const msg = inp.value.trim();
   if (!msg) return;
