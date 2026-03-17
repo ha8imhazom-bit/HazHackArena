@@ -1791,7 +1791,7 @@ function renderPixelArt(data, scale){
 // عرض صورة Flux من Pollinations
 // ============================================================
 function displayFluxImage(prompt, bubble) {
-  const UNSPLASH_KEY = 'bOp4wniMJ3-88cB4aUu8P9ozvrtqJWrGUGMwAMEpwP4';
+  const PIXABAY_KEY = '49979554-3b5cfaf7db50f73cef540b3de';
 
   const loadingText = document.createElement('p');
   loadingText.style.cssText = 'color:#885555;font-family:monospace;font-size:11px;margin:6px 0;';
@@ -1809,10 +1809,10 @@ function displayFluxImage(prompt, bubble) {
   function tryFetch(query, attempt) {
     const q = encodeURIComponent(query);
     loadingText.innerText = '⏳ بدور على: ' + query + '...';
-    fetch(`https://api.unsplash.com/photos/random?query=${q}&orientation=landscape&client_id=${UNSPLASH_KEY}`)
+    fetch(`https://pixabay.com/api/?key=${PIXABAY_KEY}&q=${q}&image_type=photo&orientation=horizontal&per_page=5`)
       .then(r => r.json())
       .then(data => {
-        if (!data.urls) {
+        if (!data.hits || data.hits.length === 0) {
           // مش لاقي نتيجة — جرب كلمة أبسط
           if (attempt === 1) {
             const simpler = query.split(' ')[0];
@@ -1824,11 +1824,13 @@ function displayFluxImage(prompt, bubble) {
           return;
         }
         loadingText.remove();
-        const url = data.urls.regular;
+        const hit = data.hits[Math.floor(Math.random() * data.hits.length)];
+        const url = hit.webformatURL;
+        const pageUrl = hit.pageURL;
         const newImg = document.createElement('img');
         newImg.alt = query;
         newImg.style.cssText = 'width:100%;max-width:420px;border-radius:4px;margin-top:8px;border:2px solid #3a0000;box-shadow:0 0 14px #8b000055;cursor:pointer;display:block;';
-        newImg.onclick = function() { window.open(url, '_blank'); };
+        newImg.onclick = function() { window.open(pageUrl, '_blank'); };
         newImg.onload = function() {
           const msgs = document.getElementById('chatMsgs');
           if(msgs) msgs.scrollTop = msgs.scrollHeight;
