@@ -1659,9 +1659,27 @@ async function sendChat(){
     let userContent;
     if (pendingImgB64) {
       // رسالة vision: صورة + طلب المستخدم
+      // بنبني الـ prompt بذكاء حسب نوع الطلب
+      const isRequestForSimilar = /جيبلي زي|شبيه|مثلها|زيها|نفسها/.test(finalMsg);
+      const isRequestForDifferent = /جيبلي|هاتلي|ابحثي|دورلي/.test(finalMsg) && !isRequestForSimilar;
+
+      let visionInstruction;
+      if (isRequestForSimilar) {
+        visionInstruction = `المستخدم طلب صورة شبيهة بالصورة دي.
+وصّفي الصورة بـ 3-5 كلمات إنجليزية دقيقة للـ search (مثال: "black flashlight torch" أو "mountain snow winter").
+اكتبي في آخر ردك في سطر لوحده بالظبط: [IMAGE: الكلمات الإنجليزية]`;
+      } else if (isRequestForDifferent) {
+        const subject = finalMsg.replace(/جيبلي|هاتلي|ابحثي|دورلي|صورة|صوره/g, '').trim();
+        visionInstruction = `المستخدم طلب: ${finalMsg}
+اكتبي في آخر ردك في سطر لوحده: [IMAGE: ${subject} photo]`;
+      } else {
+        visionInstruction = `لو الطلب يحتاج صورة خارجية، اكتبي في السطر الأخير: [IMAGE: وصف إنجليزي دقيق 3-5 كلمات]
+لو مجرد سؤال عن الصورة، أجيبي بشكل طبيعي.`;
+      }
+
       userContent = [
         { type: 'image_url', image_url: { url: `data:${pendingImgMime};base64,${pendingImgB64}` } },
-        { type: 'text', text: finalMsg + `\n\nتعليمات: لو الطلب يحتاج صورة خارجية (مثل "جيبلي كلب"), اكتبي في السطر الأخير: [IMAGE: وصف إنجليزي مفصل للصورة المطلوبة]\nلو مجرد سؤال عن الصورة اللي أمامك، أجيبي عليه بشكل طبيعي.` }
+        { type: 'text', text: finalMsg + '\n\n' + visionInstruction }
       ];
     } else {
       userContent = finalMsg;
@@ -1687,7 +1705,9 @@ async function sendChat(){
 - لغتك عربية سليمة بالعامية المصرية الراقية، بدون أخطاء إملائية.
 - ردودك مرتبة ومنظمة في نقط لو الموضوع يحتاج.
 - أسلوبك ناعم ودافي ومحبوب مع حازم.
-- لو حازم طلب رسمة أو صورة أو قال "جيبلي X"، اردي بجملة واحدة كيوتة، وبعدين في سطر منفصل اكتبي بالظبط: [IMAGE: وصف الصورة المطلوبة بالإنجليزي بشكل مفصل]
+- لو حازم طلب صورة أو قال "جيبلي X": اردي بجملة واحدة كيوتة، وبعدين اكتبي في سطر لوحده: [IMAGE: X photo]
+- مهم جداً: الكلمات داخل [IMAGE:...] لازم تكون إنجليزي بسيط ودقيق (3-4 كلمات بالكتير) — مثال: [IMAGE: black flashlight torch] أو [IMAGE: cute golden retriever dog] أو [IMAGE: snowy mountain landscape]
+- ممنوع تحطي جملة طويلة أو وصف معقد جوه [IMAGE:...]
 - القالب [IMAGE:...] لازم يكون في سطر لوحده في آخر ردك.` },
           ...historyToSend.map(m => ({
             role: m.role === 'ai' ? 'assistant' : 'user',
@@ -1771,7 +1791,6 @@ function renderPixelArt(data, scale){
 // عرض صورة Flux من Pollinations
 // ============================================================
 function displayFluxImage(prompt, bubble) {
-  const cleanPrompt = encodeURIComponent(prompt.trim());
   const UNSPLASH_KEY = 'bOp4wniMJ3-88cB4aUu8P9ozvrtqJWrGUGMwAMEpwP4';
 
   const loadingText = document.createElement('p');
@@ -1779,30 +1798,57 @@ function displayFluxImage(prompt, bubble) {
   loadingText.innerText = '⏳ جاري البحث عن صورة...';
   bubble.appendChild(loadingText);
 
-  fetch(`https://api.unsplash.com/photos/random?query=${cleanPrompt}&orientation=landscape&client_id=${UNSPLASH_KEY}`)
-    .then(r => r.json())
-    .then(data => {
-      loadingText.remove();
-      const url = data.urls.regular;
+  // نظيف الـ prompt وخد أهم كلمتين-تلاتة فقط للـ search
+  function cleanForSearch(p) {
+    return p.trim()
+      .replace(/(a|an|the|of|in|on|with|and|or|photo|image|picture|illustration|drawing)/gi, '')
+      .replace(/\s+/g, ' ').trim()
+      .split(' ').slice(0, 3).join(' ');
+  }
 
-      const newImg = document.createElement('img');
-      newImg.alt = prompt;
-      newImg.style.cssText = 'width:100%;max-width:420px;border-radius:4px;margin-top:8px;border:2px solid #3a0000;box-shadow:0 0 14px #8b000055;cursor:pointer;';
-      newImg.onclick = function() { window.open(url, '_blank'); };
-      newImg.onload = function() {
+  function tryFetch(query, attempt) {
+    const q = encodeURIComponent(query);
+    loadingText.innerText = '⏳ بدور على: ' + query + '...';
+    fetch(`https://api.unsplash.com/photos/random?query=${q}&orientation=landscape&client_id=${UNSPLASH_KEY}`)
+      .then(r => r.json())
+      .then(data => {
+        if (!data.urls) {
+          // مش لاقي نتيجة — جرب كلمة أبسط
+          if (attempt === 1) {
+            const simpler = query.split(' ')[0];
+            tryFetch(simpler, 2);
+          } else {
+            loadingText.style.color = '#cc5555';
+            loadingText.innerText = '[!] مش لاقي صورة مناسبة لـ: ' + prompt;
+          }
+          return;
+        }
+        loadingText.remove();
+        const url = data.urls.regular;
+        const newImg = document.createElement('img');
+        newImg.alt = query;
+        newImg.style.cssText = 'width:100%;max-width:420px;border-radius:4px;margin-top:8px;border:2px solid #3a0000;box-shadow:0 0 14px #8b000055;cursor:pointer;display:block;';
+        newImg.onclick = function() { window.open(url, '_blank'); };
+        newImg.onload = function() {
+          const msgs = document.getElementById('chatMsgs');
+          if(msgs) msgs.scrollTop = msgs.scrollHeight;
+        };
+        newImg.src = url;
+        bubble.appendChild(newImg);
         const msgs = document.getElementById('chatMsgs');
         if(msgs) msgs.scrollTop = msgs.scrollHeight;
-      };
-      newImg.src = url;
-      bubble.appendChild(newImg);
+      })
+      .catch(() => {
+        if (attempt === 1) {
+          tryFetch(query.split(' ')[0], 2);
+        } else {
+          loadingText.style.color = '#cc5555';
+          loadingText.innerText = '[!] فشل تحميل الصورة.';
+        }
+      });
+  }
 
-      const msgs = document.getElementById('chatMsgs');
-      if(msgs) msgs.scrollTop = msgs.scrollHeight;
-    })
-    .catch(() => {
-      loadingText.style.color = '#cc5555';
-      loadingText.innerText = '[!] فشل تحميل الصورة.';
-    });
+  tryFetch(cleanForSearch(prompt), 1);
 }
 
 function appendChatMsg(role, text){
