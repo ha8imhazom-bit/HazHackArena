@@ -1512,7 +1512,7 @@ function clearChatImg(){
   document.getElementById('chatImgThumb').src='';
 }
 
-async // ============================================================
+// ============================================================
 // تحليل الصورة بـ Claude + البحث عن شبيهها
 // ============================================================
 let lastImageDescription = null;
@@ -1571,9 +1571,7 @@ async function sendImageToAI(input) {
       const reply = data.content?.[0]?.text || '[!] مش قادرة أشوف الصورة';
       lastImageDescription = reply.match(/KEYWORDS:\s*(.+)/i)?.[1] || null;
 
-      appendChatMsg('ai', reply + '
-
-لو عايز تشوف صور شبيهها قولي "جيبي شبيهها" 🔍');
+      appendChatMsg('ai', reply + '\n\nلو عايز تشوف صور شبيهها قولي "جيبي شبيهها" 🔍');
       chatHistory.push({role:'ai', text: reply});
       saveChatHistory();
 
@@ -1585,7 +1583,7 @@ async function sendImageToAI(input) {
   reader.readAsDataURL(file);
 }
 
-function sendChat(){
+async function sendChat(){
   const inp = document.getElementById('chatInput');
   const msg = inp.value.trim();
   if (!msg) return;
