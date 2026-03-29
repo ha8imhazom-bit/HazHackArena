@@ -758,7 +758,7 @@ body{font-family:'Courier Prime',monospace;background:var(--bg);color:var(--text
     </div>
     <div class="modal-body" style="padding:14px">
       <div id="noKeyWarning" style="display:none;background:#0a0000;border:1px solid #5a0000;padding:8px 10px;margin-bottom:8px;font-size:11px;color:#cc5555;text-align:center">
-        [!] مفيش API Key — اضغط [⚙ Key] فوق وحط الـ key بتاعك
+        [!] مفيش API Key — اضغط [⚙ Key] فوق، اختار الـ Provider وحط الـ key بتاعك
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
         <span style="font-size:9px;color:#1a3a1a;letter-spacing:1px" id="ownerBadge"></span>
@@ -792,23 +792,55 @@ body{font-family:'Courier Prime',monospace;background:var(--bg);color:var(--text
 
 <!-- SETTINGS (API KEY) -->
 <div class="modal-overlay" id="settingsModal">
-  <div class="modal" style="width:400px">
+  <div class="modal" style="width:440px">
     <div class="modal-titlebar" style="background:#000a1a;color:#5599cc;border-bottom-color:#1a3a5a">
-      [⚙] إعدادات الـ API Key
+      [⚙] إعدادات الـ API
       <button class="modal-close" style="background:#001a33;color:#55aaff;border-color:#1a5a8a" onclick="closeModal('settingsModal')">[x]</button>
     </div>
     <div class="modal-body" style="padding:16px;gap:12px">
-      <p style="font-size:11px;color:#558899;line-height:1.6">
-        الـ key بيتحفظ في متصفحك فقط — مش في الكود ومش على GitHub.<br>
-        روح <span style="color:#55aaff">console.groq.com/keys</span> واعمل key جديد لو محتاج.
-      </p>
-      <label style="font-size:11px;color:#558899;letter-spacing:1px">// Groq API Key:</label>
-      <input type="password" id="groqKeyInput" placeholder="gsk_..."
-        style="width:100%;background:#050d1a;border:1px solid #1a3a5a;color:#55aaff;padding:8px 10px;font-family:Courier Prime,monospace;font-size:13px;outline:none;letter-spacing:1px"
+
+      <!-- اختيار الـ Provider -->
+      <label style="font-size:11px;color:#558899;letter-spacing:1px">// اختر الـ Provider:</label>
+      <select id="apiProviderSelect"
+        onchange="onProviderChange()"
+        style="width:100%;background:#050d1a;border:1px solid #1a3a5a;color:#55aaff;padding:8px 10px;font-family:'Courier Prime',monospace;font-size:13px;outline:none">
+        <option value="groq">🟣 Groq (مجاني وسريع)</option>
+        <option value="gemini">🔵 Google Gemini</option>
+        <option value="openai">🟢 OpenAI / ChatGPT</option>
+        <option value="openrouter">🟠 OpenRouter (كل النماذج)</option>
+        <option value="custom">⚙️ Custom (أي API)</option>
+      </select>
+
+      <!-- وصف Provider مع رابط -->
+      <div id="providerDesc" style="font-size:11px;color:#558899;line-height:1.7;background:#05101a;border:1px solid #1a3a5a;padding:8px 10px"></div>
+
+      <!-- Custom endpoint (يظهر بس للـ custom) -->
+      <div id="customEndpointWrap" style="display:none">
+        <label style="font-size:11px;color:#558899;letter-spacing:1px">// API Endpoint URL:</label>
+        <input type="text" id="customEndpointInput" placeholder="https://api.example.com/v1/chat/completions"
+          style="width:100%;background:#050d1a;border:1px solid #1a3a5a;color:#55aaff;padding:8px 10px;font-family:'Courier Prime',monospace;font-size:12px;outline:none;margin-top:4px"/>
+        <label style="font-size:11px;color:#558899;letter-spacing:1px;margin-top:8px;display:block">// Model Name:</label>
+        <input type="text" id="customModelInput" placeholder="مثال: gpt-4o أو llama-3.3-70b-versatile"
+          style="width:100%;background:#050d1a;border:1px solid #1a3a5a;color:#55aaff;padding:8px 10px;font-family:'Courier Prime',monospace;font-size:12px;outline:none;margin-top:4px"/>
+      </div>
+
+      <!-- Model اختياري (لغير custom) -->
+      <div id="modelSelectWrap" style="display:none">
+        <label style="font-size:11px;color:#558899;letter-spacing:1px">// اختر الموديل:</label>
+        <select id="apiModelSelect"
+          style="width:100%;background:#050d1a;border:1px solid #1a3a5a;color:#55aaff;padding:8px 10px;font-family:'Courier Prime',monospace;font-size:13px;outline:none;margin-top:4px">
+        </select>
+      </div>
+
+      <!-- API Key -->
+      <label style="font-size:11px;color:#558899;letter-spacing:1px">// API Key:</label>
+      <input type="password" id="groqKeyInput" placeholder="الصق الـ key هنا..."
+        style="width:100%;background:#050d1a;border:1px solid #1a3a5a;color:#55aaff;padding:8px 10px;font-family:'Courier Prime',monospace;font-size:13px;outline:none;letter-spacing:1px"
         onkeydown="if(event.key==='Enter')saveGroqKey()"/>
+
       <div id="keyStatus" style="font-size:10px;min-height:16px;color:#3a7a3a"></div>
       <div style="display:flex;gap:8px">
-        <button class="modal-btn green" onclick="saveGroqKey()" style="flex:1">[ حفظ الـ Key ]</button>
+        <button class="modal-btn green" onclick="saveGroqKey()" style="flex:1">[ حفظ ]</button>
         <button class="modal-btn" onclick="clearGroqKey()" style="background:#0a0000;color:#cc5555;border-color:#5a0000">[ حذف ]</button>
       </div>
     </div>
@@ -1493,31 +1525,143 @@ function confirmConvert(){
 }
 
 // ============================================================
-// AI CHAT (Groq) — الـ key بيتحفظ في localStorage مش في الكود
+// AI CHAT — Multi-Provider Support
+// Supports: Groq, Gemini, OpenAI, OpenRouter, Custom
+// الـ key بيتحفظ في localStorage مش في الكود
 // ============================================================
-function getGroqKey(){ return localStorage.getItem('groq_api_key') || ''; }
-function setGroqKey(k){ localStorage.setItem('groq_api_key', k.trim()); }
-const GROQ_TEXT  = 'llama-3.3-70b-versatile';
-const GROQ_VISION= 'meta-llama/llama-4-scout-17b-16e-instruct';
+
+// ---- Provider configs ----
+const PROVIDERS = {
+  groq: {
+    name: 'Groq',
+    endpoint: 'https://api.groq.com/openai/v1/chat/completions',
+    keyHint: 'gsk_...',
+    keyPrefix: '',
+    desc: 'مجاني وسريع جداً ✅<br>احصل على key من: <span style="color:#55aaff">console.groq.com/keys</span>',
+    models: ['llama-3.3-70b-versatile','llama-3.1-8b-instant','mixtral-8x7b-32768','gemma2-9b-it'],
+    visionModel: 'meta-llama/llama-4-scout-17b-16e-instruct',
+    format: 'openai',
+  },
+  gemini: {
+    name: 'Google Gemini',
+    endpoint: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
+    keyHint: 'AIza...',
+    keyPrefix: '',
+    desc: 'من جوجل — مجاني بحدود ✅<br>احصل على key من: <span style="color:#55aaff">aistudio.google.com/apikey</span>',
+    models: ['gemini-2.0-flash','gemini-1.5-pro','gemini-1.5-flash'],
+    visionModel: 'gemini-2.0-flash',
+    format: 'openai',
+  },
+  openai: {
+    name: 'OpenAI / ChatGPT',
+    endpoint: 'https://api.openai.com/v1/chat/completions',
+    keyHint: 'sk-...',
+    keyPrefix: '',
+    desc: 'ChatGPT و GPT-4 💰<br>احصل على key من: <span style="color:#55aaff">platform.openai.com/api-keys</span>',
+    models: ['gpt-4o','gpt-4o-mini','gpt-4-turbo','gpt-3.5-turbo'],
+    visionModel: 'gpt-4o',
+    format: 'openai',
+  },
+  openrouter: {
+    name: 'OpenRouter',
+    endpoint: 'https://openrouter.ai/api/v1/chat/completions',
+    keyHint: 'sk-or-...',
+    keyPrefix: '',
+    desc: 'بوابة لكل النماذج (Claude, Llama, Mistral, إلخ) 🔀<br>احصل على key من: <span style="color:#55aaff">openrouter.ai/keys</span>',
+    models: ['meta-llama/llama-3.3-70b-instruct:free','mistralai/mistral-7b-instruct:free','google/gemma-3-27b-it:free','anthropic/claude-3.5-haiku','openai/gpt-4o'],
+    visionModel: 'meta-llama/llama-4-scout',
+    format: 'openai',
+  },
+  custom: {
+    name: 'Custom',
+    endpoint: '',
+    keyHint: 'أي key...',
+    keyPrefix: '',
+    desc: 'أي API يدعم OpenAI format (base URL + model حسب اختيارك)',
+    models: [],
+    visionModel: '',
+    format: 'openai',
+  }
+};
+
+function getApiProvider(){ return localStorage.getItem('api_provider') || 'groq'; }
+function setApiProvider(p){ localStorage.setItem('api_provider', p); }
+function getGroqKey(){ return localStorage.getItem('api_key') || localStorage.getItem('groq_api_key') || ''; }
+function setGroqKey(k){ localStorage.setItem('api_key', k.trim()); }
+function getApiModel(){
+  const p = getApiProvider();
+  return localStorage.getItem('api_model_' + p) || (PROVIDERS[p]?.models[0] || '');
+}
+function setApiModel(m){ localStorage.setItem('api_model_' + getApiProvider(), m); }
+function getCustomEndpoint(){ return localStorage.getItem('api_custom_endpoint') || ''; }
+function setCustomEndpoint(u){ localStorage.setItem('api_custom_endpoint', u); }
+function getCustomModel(){ return localStorage.getItem('api_custom_model') || ''; }
+function setCustomModel(m){ localStorage.setItem('api_custom_model', m); }
+
+// ---- Provider change UI ----
+function onProviderChange(){
+  const p = document.getElementById('apiProviderSelect').value;
+  const cfg = PROVIDERS[p];
+  document.getElementById('providerDesc').innerHTML = cfg.desc;
+  document.getElementById('groqKeyInput').placeholder = cfg.keyHint;
+
+  const customWrap = document.getElementById('customEndpointWrap');
+  const modelWrap  = document.getElementById('modelSelectWrap');
+
+  if(p === 'custom'){
+    customWrap.style.display = 'block';
+    modelWrap.style.display  = 'none';
+    document.getElementById('customEndpointInput').value = getCustomEndpoint();
+    document.getElementById('customModelInput').value    = getCustomModel();
+  } else {
+    customWrap.style.display = 'none';
+    if(cfg.models.length > 0){
+      modelWrap.style.display = 'block';
+      const sel = document.getElementById('apiModelSelect');
+      sel.innerHTML = cfg.models.map(m => `<option value="${m}">${m}</option>`).join('');
+      sel.value = getApiModel() || cfg.models[0];
+    } else {
+      modelWrap.style.display = 'none';
+    }
+  }
+}
 
 function saveGroqKey(){
   const inp = document.getElementById('groqKeyInput');
   const val = inp.value.trim();
   const status = document.getElementById('keyStatus');
-  if(!val || !val.startsWith('gsk_')){
+  const provider = document.getElementById('apiProviderSelect').value;
+
+  if(!val){
     status.style.color='#cc5555';
-    status.textContent='[!] الـ key لازم يبدأ بـ gsk_';
+    status.textContent='[!] الـ key فاضي!';
     return;
   }
+
+  // حفظ provider + key + model
+  setApiProvider(provider);
   setGroqKey(val);
+
+  if(provider === 'custom'){
+    const ep = document.getElementById('customEndpointInput').value.trim();
+    const mdl = document.getElementById('customModelInput').value.trim();
+    if(!ep){ status.style.color='#cc5555'; status.textContent='[!] حط الـ endpoint'; return; }
+    setCustomEndpoint(ep);
+    setCustomModel(mdl);
+  } else {
+    const sel = document.getElementById('apiModelSelect');
+    if(sel && sel.value) setApiModel(sel.value);
+  }
+
   status.style.color='#3a8a3a';
-  status.textContent='[OK] تم الحفظ ✓';
+  status.textContent='[OK] تم الحفظ ✓ (' + PROVIDERS[provider].name + ')';
   inp.value='';
   checkKeyWarning();
-  setTimeout(()=>closeModal('settingsModal'), 800);
+  setTimeout(()=>closeModal('settingsModal'), 900);
 }
 
 function clearGroqKey(){
+  localStorage.removeItem('api_key');
   localStorage.removeItem('groq_api_key');
   document.getElementById('keyStatus').style.color='#885555';
   document.getElementById('keyStatus').textContent='[X] تم الحذف';
@@ -1530,20 +1674,39 @@ function checkKeyWarning(){
   warn.style.display = getGroqKey() ? 'none' : 'block';
 }
 
-// عند فتح modal الإعدادات، بين الـ key المحفوظ (مخفي)
+// الـ endpoint والموديل الفعلي حسب الـ provider
+function getActiveEndpoint(){
+  const p = getApiProvider();
+  if(p === 'custom') return getCustomEndpoint();
+  return PROVIDERS[p]?.endpoint || PROVIDERS.groq.endpoint;
+}
+function getActiveModel(isVision){
+  const p = getApiProvider();
+  if(p === 'custom') return getCustomModel() || 'gpt-4o';
+  const cfg = PROVIDERS[p] || PROVIDERS.groq;
+  if(isVision && cfg.visionModel) return cfg.visionModel;
+  return getApiModel() || cfg.models[0];
+}
+
+// عند فتح modal الإعدادات
 const _origOpenModal = window.openModal;
 window.openModal = function(id){
   _origOpenModal(id);
   if(id === 'settingsModal'){
+    const p = getApiProvider();
+    const sel = document.getElementById('apiProviderSelect');
+    if(sel) sel.value = p;
+    onProviderChange();
+
     const k = getGroqKey();
     const inp = document.getElementById('groqKeyInput');
     const status = document.getElementById('keyStatus');
-    if(k){ 
-      inp.placeholder = k.slice(0,8) + '...' + k.slice(-4) + ' (محفوظ)';
+    if(k){
+      inp.placeholder = k.slice(0,6) + '...' + k.slice(-4) + ' (محفوظ)';
       status.style.color='#3a8a3a';
-      status.textContent='[✓] يوجد key محفوظ';
+      status.textContent='[✓] يوجد key محفوظ — Provider: ' + (PROVIDERS[p]?.name || p);
     } else {
-      inp.placeholder = 'gsk_...';
+      inp.placeholder = PROVIDERS[p]?.keyHint || 'الصق الـ key هنا...';
       status.textContent='';
     }
   }
@@ -1685,11 +1848,12 @@ async function sendChat(){
       userContent = finalMsg;
     }
 
-    const model = pendingImgB64 ? GROQ_VISION : GROQ_TEXT;
+    const model = getActiveModel(!!pendingImgB64);
+    const endpoint = getActiveEndpoint();
 
     const historyToSend = chatHistory.slice(-20, -1);
 
-    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    const res = await fetch(endpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -1809,7 +1973,7 @@ function displayFluxImage(prompt, bubble) {
   function tryFetch(query, attempt) {
     const q = encodeURIComponent(query);
     loadingText.innerText = '⏳ بدور على: ' + query + '...';
-    fetch(`https://pixabay.com/api/?key=${PIXABAY_KEY}&q=${q}&image_type=photo&orientation=horizontal&per_page=5`)
+    fetch(`https://pixabay.com/api/?key=${PIXABAY_KEY}&q=${q}&image_type=photo&orientation=horizontal&per_page=5&safesearch=true`)
       .then(r => r.json())
       .then(data => {
         if (!data.hits || data.hits.length === 0) {
