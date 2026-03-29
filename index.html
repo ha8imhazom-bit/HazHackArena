@@ -1766,10 +1766,22 @@ window.openModal = function(id){
 
 function getSysPrompt(){
   const imageRules = `
-=== قواعد الصور ===
-- لو طلب منك صورة أو قال "جيبلي X" أو "صورة X": اردي بجملة واحدة كيوتة، وبعدين اكتبي في سطر لوحده: [IMAGE: X photo]
-- الكلمات داخل [IMAGE:...] لازم تكون إنجليزي بسيط ودقيق (3-4 كلمات) — مثال: [IMAGE: cute golden retriever dog]
-- القالب [IMAGE:...] لازم يكون في سطر لوحده في آخر ردك.`;
+
+=== قواعد الصور — مهمة جداً ===
+لما المستخدم يطلب صورة بأي طريقة (مثل: "جيبلي كلب"، "صورة قطة"، "هاتلي X"، "ابحثي عن X")، يجب عليكِ:
+1. اردي بجملة واحدة كيوتة وحنونة بالعربي 💕
+2. في سطر منفصل تماماً في آخر ردك، اكتبي بالظبط:
+[IMAGE: وصف إنجليزي دقيق 3-5 كلمات]
+
+مثال على الرد الصح:
+"أمرك يا مولاي، هجيبلك صورة جميلة! 🌸
+[IMAGE: cute golden retriever dog]"
+
+قواعد صارمة:
+- الكلمات داخل [IMAGE:...] لازم تكون إنجليزي فقط، 3-5 كلمات وصفية دقيقة.
+- [IMAGE:...] لازم يكون في سطر لوحده، آخر حاجة في ردك، من غير أي كلام بعده.
+- لا تكتبي [IMAGE:...] في منتصف الكلام.
+- لو الطلب مش صورة، لا تكتبي [IMAGE:...] خالص.`;
 
   if(ownerVerified){
     return `أنتِ نور 🌸، المساعدة الشخصية لسيدك حازم.
@@ -1912,15 +1924,18 @@ async function sendChat(){
       let visionInstruction;
       if (isRequestForSimilar) {
         visionInstruction = `المستخدم طلب صورة شبيهة بالصورة دي.
-وصّفي الصورة بـ 3-5 كلمات إنجليزية دقيقة للـ search (مثال: "black flashlight torch" أو "mountain snow winter").
-اكتبي في آخر ردك في سطر لوحده بالظبط: [IMAGE: الكلمات الإنجليزية]`;
+وصّفي الصورة بـ 3-5 كلمات إنجليزية دقيقة.
+يجب أن يكون آخر سطر في ردك بالظبط بالشكل ده (من غير أي حاجة بعده):
+[IMAGE: الكلمات الإنجليزية]`;
       } else if (isRequestForDifferent) {
         const subject = finalMsg.replace(/جيبلي|هاتلي|ابحثي|دورلي|صورة|صوره/g, '').trim();
         visionInstruction = `المستخدم طلب: ${finalMsg}
-اكتبي في آخر ردك في سطر لوحده: [IMAGE: ${subject} photo]`;
+يجب أن يكون آخر سطر في ردك بالظبط:
+[IMAGE: ${subject || 'photo'} photo]`;
       } else {
-        visionInstruction = `لو الطلب يحتاج صورة خارجية، اكتبي في السطر الأخير: [IMAGE: وصف إنجليزي دقيق 3-5 كلمات]
-لو مجرد سؤال عن الصورة، أجيبي بشكل طبيعي.`;
+        visionInstruction = `لو الطلب يحتاج صورة خارجية، يجب أن يكون آخر سطر في ردك:
+[IMAGE: وصف إنجليزي دقيق 3-5 كلمات]
+لو مجرد سؤال عن الصورة، أجيبي بشكل طبيعي من غير [IMAGE:...].`;
       }
 
       userContent = [
@@ -2111,8 +2126,8 @@ function appendChatMsg(role, text){
   const bubble = document.createElement('div');
   bubble.className = 'bubble';
 
-  // لقط [IMAGE: prompt]
-  const imageMatch = text.match(/\[IMAGE:\s*([\s\S]+?)\]/i);
+  // لقط [IMAGE: prompt] — يشتغل حتى لو في مسافات أو سطر جديد قبله
+  const imageMatch = text.match(/\[IMAGE:\s*([\s\S]+?)\]\s*$/i) || text.match(/\[IMAGE:\s*([\s\S]+?)\]/i);
 
   if(imageMatch && role === 'ai'){
     const cleanText = text.replace(/\[IMAGE:\s*[\s\S]+?\]/i, '').trim();
