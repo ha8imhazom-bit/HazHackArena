@@ -593,8 +593,10 @@ body{font-family:'Courier Prime',monospace;background:var(--bg);color:var(--text
             <button class="txt-tool-btn" onclick="saveTxtDoc()">[SAV] حفظ</button>
             <button class="txt-tool-btn" onclick="document.getElementById('txtImgInp').click()">[IMG]+</button>
             <button class="txt-tool-btn" onclick="document.getElementById('txtAudInp').click()">[AUD]+</button>
+            <button class="txt-tool-btn" onclick="document.getElementById('txtFileInp').click()" title="استورد ملف .txt من الكومبيوتر" style="color:#55aaff;border-color:#1a3a5a">[TXT] استورد</button>
             <input type="file" id="txtImgInp" accept="image/*" style="display:none" onchange="insertTxtMedia(this,'img')"/>
             <input type="file" id="txtAudInp" accept="audio/*" style="display:none" onchange="insertTxtMedia(this,'aud')"/>
+            <input type="file" id="txtFileInp" accept=".txt,.md,.csv,.log,.json,.py,.js,.html,.css,.xml" style="display:none" onchange="importTxtFile(this)"/>
           </div>
           <div id="txtPreview" class="text-preview-wrap" style="display:none"></div>
           <div class="text-saved-list" id="txtSavedList"></div>
@@ -1274,6 +1276,25 @@ function insertTxtMedia(input,type){
   reader.readAsDataURL(file);
   input.value='';
 }
+function importTxtFile(input){
+  const file = input.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const ta = document.getElementById('textArea'); if(!ta) return;
+    const existing = ta.value.trim();
+    const sep = existing ? '\n\n--- ' + file.name + ' ---\n' : '';
+    ta.value = existing + sep + ev.target.result;
+    // ضع اسم المستند تلقائياً لو فاضي
+    const nameEl = document.getElementById('textDocName');
+    if(nameEl && !nameEl.value.trim()){
+      nameEl.value = file.name.replace(/\.[^.]+$/, '');
+    }
+    showNotif('[OK] تم استيراد: ' + file.name);
+  };
+  reader.readAsText(file, 'UTF-8');
+  input.value = '';
+}
+
 function saveTxtDoc(){
   const ta=document.getElementById('textArea');
   const nameEl=document.getElementById('textDocName');
@@ -1931,7 +1952,8 @@ async function sendChat(){
           'Content-Type': 'application/json',
           'x-api-key': getGroqKey(),
           'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true'
+          'anthropic-dangerous-direct-browser-access': 'true',
+          'anthropic-beta': 'messages-2023-12-15'
         },
         body: JSON.stringify({
           model: model,
