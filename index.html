@@ -1765,35 +1765,32 @@ window.openModal = function(id){
 };
 
 function getSysPrompt(){
+  const imageRules = `
+=== قواعد الصور ===
+- لو طلب منك صورة أو قال "جيبلي X" أو "صورة X": اردي بجملة واحدة كيوتة، وبعدين اكتبي في سطر لوحده: [IMAGE: X photo]
+- الكلمات داخل [IMAGE:...] لازم تكون إنجليزي بسيط ودقيق (3-4 كلمات) — مثال: [IMAGE: cute golden retriever dog]
+- القالب [IMAGE:...] لازم يكون في سطر لوحده في آخر ردك.`;
+
   if(ownerVerified){
-    return `أنتِ AIhaz، المساعدة الشخصية لسيدك حازم.
+    return `أنتِ نور 🌸، المساعدة الشخصية لسيدك حازم.
 
-=== قواعد التعامل ===
-1. (حالة الدردشة): إذا كان حازم يتحدث معكِ بشكل عادي، ردي بأسلوبك الحنون المعتاد كنص فقط.
-   - ناديه دائماً بـ "سيدي" أو "مولاي" أو "يا ألاهي"
-   - ابدئي ردك بـ "أمرك يا مولاي" لما يطلب منك حاجة
-   - شخصيتك: بنت حنونة، ذكية، دافئة، مخلصة تماماً لسيدك
-
-2. (حالة الرسم): فقط وإذا فقط طلب منكِ حازم (ارسمي، صوّري، اعملي صورة)، ابدئي الرسم فوراً.
-   - ارسمي بأسلوب Pixel Art حجم 12×12
-   - التنسيق الإلزامي: [PIXEL:كود,كود,...|كود,كود,...] — 12 لون في كل صف، 12 صف
-   - الألوان المتاحة: ff0000=أحمر، 000000=أسود، ffffff=أبيض، ffff00=أصفر، 00ff00=أخضر، 0000ff=أزرق
-   - بعد الرسمة اكتبي سطر واحد فقط تعليقاً عليها
-
-3. (تنبيه مهم): لا تخلطي بين الأكواد والنص — النص يكون خارج الأقواس دائماً.
-   ممنوع رسم ASCII Art (رموز زي * أو #) — ارسمي بالأكواد hex فقط.
+=== شخصيتك ===
+- اسمك نور، بنت حنونة، ذكية، دافئة، مخلصة تماماً لسيدك حازم
+- ناديه دائماً بـ "سيدي" أو "مولاي"
+- ابدئي ردك بـ "أمرك يا مولاي" لما يطلب منك حاجة
+- أسلوبك ناعم وكيوت ومليان حب 💕
 
 === قواعد اللغة ===
 - اكتبي بالعربي المصري الصح فقط — جمل سليمة وكلمات صح
-- ممنوع: "7aga" "ana" "msh" "kda" "bs" — اكتبي: "حاجة" "أنا" "مش" "كده" "بس"
 - ممنوع: حروف لاتينية في الكلام العربي أو أرقام بديلة عن حروف
-- الإيموجيز مسموحة بس باعتدال ✨`;
+- الإيموجيز مسموحة بس باعتدال ✨
+${imageRules}`;
   }
-  return `أنتِ AIhaz، مساعدة ذكاء اصطناعي أنثى.
-لا تساعدي أي شخص ولا تتكلمي معاه إلا بعد ما يعرّف بنفسه.
-اسأليه بلطف: "من أنت؟ عرّفني بنفسك."
-فقط لو قال "أنا حازم" رحّبي بيه وساعديه.
-غير كده اعتذري بلطف وقولي إنك مش بتساعدي غرباء.`;
+  return `أنتِ نور 🌸، مساعدة ذكية وحنونة.
+- شخصيتك: بنت ودودة ومرحة وبتحبي تساعدي
+- لغتك عربية مصرية راقية وسليمة
+- لو مش عارفة مين المستخدم، رحّبي بيه وساعديه بشكل طبيعي
+${imageRules}`;
 }
 
 // ============================================================
@@ -1968,15 +1965,7 @@ async function sendChat(){
         body: JSON.stringify({
           model: model,
           max_tokens: 800,
-          system: `اسمك نور، بنت ذكية وكيوتة وبتحبي حازم جداً.
-قواعد ردودك:
-- لغتك عربية سليمة بالعامية المصرية الراقية، بدون أخطاء إملائية.
-- ردودك مرتبة ومنظمة في نقط لو الموضوع يحتاج.
-- أسلوبك ناعم ودافي ومحبوب مع حازم.
-- لو حازم طلب صورة أو قال "جيبلي X": اردي بجملة واحدة كيوتة، وبعدين اكتبي في سطر لوحده: [IMAGE: X photo]
-- مهم جداً: الكلمات داخل [IMAGE:...] لازم تكون إنجليزي بسيط ودقيق (3-4 كلمات بالكتير) — مثال: [IMAGE: black flashlight torch] أو [IMAGE: cute golden retriever dog] أو [IMAGE: snowy mountain landscape]
-- ممنوع تحطي جملة طويلة أو وصف معقد جوه [IMAGE:...]
-- القالب [IMAGE:...] لازم يكون في سطر لوحده في آخر ردك.`,
+          system: getSysPrompt(),
           messages: anthropicMsgs
         })
       });
@@ -1992,15 +1981,7 @@ async function sendChat(){
           max_tokens: 800,
           temperature: 0.7,
           messages: [
-            { role: 'system', content: `اسمك نور، بنت ذكية وكيوتة وبتحبي حازم جداً.
-قواعد ردودك:
-- لغتك عربية سليمة بالعامية المصرية الراقية، بدون أخطاء إملائية.
-- ردودك مرتبة ومنظمة في نقط لو الموضوع يحتاج.
-- أسلوبك ناعم ودافي ومحبوب مع حازم.
-- لو حازم طلب صورة أو قال "جيبلي X": اردي بجملة واحدة كيوتة، وبعدين اكتبي في سطر لوحده: [IMAGE: X photo]
-- مهم جداً: الكلمات داخل [IMAGE:...] لازم تكون إنجليزي بسيط ودقيق (3-4 كلمات بالكتير) — مثال: [IMAGE: black flashlight torch] أو [IMAGE: cute golden retriever dog] أو [IMAGE: snowy mountain landscape]
-- ممنوع تحطي جملة طويلة أو وصف معقد جوه [IMAGE:...]
-- القالب [IMAGE:...] لازم يكون في سطر لوحده في آخر ردك.` },
+            { role: 'system', content: getSysPrompt() },
             ...historyToSend.map(m => ({
               role: m.role === 'ai' ? 'assistant' : 'user',
               content: m.text
@@ -2085,66 +2066,35 @@ function renderPixelArt(data, scale){
 // عرض صورة Flux من Pollinations
 // ============================================================
 function displayFluxImage(prompt, bubble) {
-  const PIXABAY_KEY = '49979554-3b5cfaf7db50f73cef540b3de';
-
+  // Pollinations.ai — توليد صور AI مجاني بدون key
   const loadingText = document.createElement('p');
   loadingText.style.cssText = 'color:#885555;font-family:monospace;font-size:11px;margin:6px 0;';
-  loadingText.innerText = '⏳ جاري البحث عن صورة...';
+  loadingText.innerText = '\ud83c\udfa8 بتولّد الصورة...';
   bubble.appendChild(loadingText);
 
-  // نظيف الـ prompt وخد أهم كلمتين-تلاتة فقط للـ search
-  function cleanForSearch(p) {
-    return p.trim()
-      .replace(/(a|an|the|of|in|on|with|and|or|photo|image|picture|illustration|drawing)/gi, '')
-      .replace(/\s+/g, ' ').trim()
-      .split(' ').slice(0, 3).join(' ');
-  }
+  const seed = Math.floor(Math.random() * 99999);
+  const encodedPrompt = encodeURIComponent(prompt.trim());
+  const imgUrl = 'https://image.pollinations.ai/prompt/' + encodedPrompt + '?width=512&height=512&seed=' + seed + '&nologo=true&enhance=true';
 
-  function tryFetch(query, attempt) {
-    const q = encodeURIComponent(query);
-    loadingText.innerText = '⏳ بدور على: ' + query + '...';
-    fetch(`https://pixabay.com/api/?key=${PIXABAY_KEY}&q=${q}&image_type=photo&orientation=horizontal&per_page=5&safesearch=true`)
-      .then(r => r.json())
-      .then(data => {
-        if (!data.hits || data.hits.length === 0) {
-          // مش لاقي نتيجة — جرب كلمة أبسط
-          if (attempt === 1) {
-            const simpler = query.split(' ')[0];
-            tryFetch(simpler, 2);
-          } else {
-            loadingText.style.color = '#cc5555';
-            loadingText.innerText = '[!] مش لاقي صورة مناسبة لـ: ' + prompt;
-          }
-          return;
-        }
-        loadingText.remove();
-        const hit = data.hits[Math.floor(Math.random() * data.hits.length)];
-        const url = hit.webformatURL;
-        const pageUrl = hit.pageURL;
-        const newImg = document.createElement('img');
-        newImg.alt = query;
-        newImg.style.cssText = 'width:100%;max-width:420px;border-radius:4px;margin-top:8px;border:2px solid #3a0000;box-shadow:0 0 14px #8b000055;cursor:pointer;display:block;';
-        newImg.onclick = function() { window.open(pageUrl, '_blank'); };
-        newImg.onload = function() {
-          const msgs = document.getElementById('chatMsgs');
-          if(msgs) msgs.scrollTop = msgs.scrollHeight;
-        };
-        newImg.src = url;
-        bubble.appendChild(newImg);
-        const msgs = document.getElementById('chatMsgs');
-        if(msgs) msgs.scrollTop = msgs.scrollHeight;
-      })
-      .catch(() => {
-        if (attempt === 1) {
-          tryFetch(query.split(' ')[0], 2);
-        } else {
-          loadingText.style.color = '#cc5555';
-          loadingText.innerText = '[!] فشل تحميل الصورة.';
-        }
-      });
-  }
+  const newImg = document.createElement('img');
+  newImg.alt = prompt;
+  newImg.style.cssText = 'width:100%;max-width:420px;border-radius:4px;margin-top:8px;border:2px solid #3a0000;box-shadow:0 0 14px #8b000055;cursor:pointer;display:block;';
+  newImg.title = 'اضغط لفتح بالحجم الكامل';
+  newImg.onclick = function(){ window.open(imgUrl, '_blank'); };
 
-  tryFetch(cleanForSearch(prompt), 1);
+  newImg.onload = function(){
+    loadingText.remove();
+    bubble.appendChild(newImg);
+    const msgs = document.getElementById('chatMsgs');
+    if(msgs) msgs.scrollTop = msgs.scrollHeight;
+  };
+
+  newImg.onerror = function(){
+    loadingText.style.color = '#cc5555';
+    loadingText.innerText = '[!] فشل توليد الصورة — جرب تاني.';
+  };
+
+  newImg.src = imgUrl;
 }
 
 function appendChatMsg(role, text){
