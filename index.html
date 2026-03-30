@@ -1958,7 +1958,11 @@ async function sendChat(){
     const provider = getApiProvider();
     const cfg = PROVIDERS[provider] || PROVIDERS.groq;
 
-    const historyToSend = chatHistory.slice(-20, -1);
+    // مسح [IMAGE:...] من الـ history — عشان الـ AI ميفتكرش الصورة اتعملت بالفعل
+    const historyToSend = chatHistory.slice(-20, -1).map(m => ({
+      ...m,
+      text: m.text.replace(/\[IMAGE:\s*[^\]]+\]/gi, '').trim()
+    }));
 
     let res;
     if(cfg.format === 'anthropic'){
@@ -2031,7 +2035,21 @@ async function sendChat(){
       return;
     }
 
-    const reply = (cfg && cfg.format === 'anthropic') ? (data.content?.[0]?.text) : data.choices?.[0]?.message?.content;
+    // استخراج الرد — ممكن يكون string أو array of content blocks
+    let rawContent = (cfg && cfg.format === 'anthropic')
+      ? data.content
+      : data.choices?.[0]?.message?.content;
+
+    let reply = '';
+    if (typeof rawContent === 'string') {
+      reply = rawContent;
+    } else if (Array.isArray(rawContent)) {
+      // اجمع النصوص من الـ blocks
+      reply = rawContent.filter(b => b.type === 'text').map(b => b.text).join('\n').trim();
+      // لو مفيش نص خالص بس في image block، اعمل placeholder
+      if (!reply) reply = '[IMAGE_ONLY]';
+    }
+
     if (!reply) {
       appendChatMsg('ai', '[!] مفيش رد من الـ AI، جرب تاني.');
       clearPendingImg();
@@ -2109,14 +2127,22 @@ async function displayFluxImage(prompt, bubble) {
   ];
 
   function extractImage(data) {
-    // جرب كل الأماكن الممكنة اللي الصورة ممكن ترجع فيها
     const msg = data?.choices?.[0]?.message;
-    if (!msg) return null;
+    if (!msg) { console.log('[IMG DEBUG] no message in data', data); return null; }
+
+    console.log('[IMG DEBUG] full message keys:', Object.keys(msg));
+    console.log('[IMG DEBUG] content type:', typeof msg.content);
+    if (Array.isArray(msg.content)) {
+      console.log('[IMG DEBUG] content blocks:', msg.content.map(b => b.type));
+    }
 
     // content array فيه image_url block
     if (Array.isArray(msg.content)) {
       const part = msg.content.find(p => p.type === 'image_url');
       if (part?.image_url?.url) return part.image_url.url;
+      // inline_data (Gemini format)
+      const part2 = msg.content.find(p => p.type === 'image');
+      if (part2?.source?.data) return 'data:image/png;base64,' + part2.source.data;
     }
 
     // images[] مباشرة
@@ -2125,6 +2151,10 @@ async function displayFluxImage(prompt, bubble) {
     // output_image
     if (msg.output_image) return msg.output_image;
 
+    // inline_data على مستوى الـ message مباشرة
+    if (msg.inline_data?.data) return 'data:' + (msg.inline_data.mime_type||'image/png') + ';base64,' + msg.inline_data.data;
+
+    console.log('[IMG DEBUG] no image found in:', JSON.stringify(msg).slice(0,300));
     return null;
   }
 
