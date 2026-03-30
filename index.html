@@ -2240,6 +2240,27 @@ function appendChatMsg(role, text){
   // لقط [IMAGE: prompt] — يشتغل حتى لو في مسافات أو سطر جديد قبله
   const imageMatch = text.match(/\[IMAGE:\s*([\s\S]+?)\]\s*$/i) || text.match(/\[IMAGE:\s*([\s\S]+?)\]/i);
 
+  // debug مرئي مؤقت — يظهر الـ raw reply دايماً
+  if(role === 'ai'){
+    const dbg = document.createElement('pre');
+    dbg.style.cssText = 'font-size:8px;color:#1a3a1a;background:#000800;padding:4px;border:1px solid #0a2a0a;max-width:380px;white-space:pre-wrap;word-break:break-all;margin:2px 0;';
+    dbg.textContent = '[RAW REPLY]
+' + text.slice(0,400) + '
+[imageMatch: ' + (imageMatch ? imageMatch[1].slice(0,60) : 'NULL') + ']';
+    const tmpBubble = document.createElement('div');
+    tmpBubble.className = 'bubble';
+    tmpBubble.appendChild(dbg);
+    const tmpW = document.createElement('div');
+    tmpW.className = 'chat-msg ai';
+    const tmpL = document.createElement('div');
+    tmpL.className = 'ai-label';
+    tmpL.textContent = 'DEBUG';
+    tmpW.appendChild(tmpL);
+    tmpW.appendChild(tmpBubble);
+    msgs.appendChild(tmpW);
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
   if(imageMatch && role === 'ai'){
     const cleanText = text.replace(/\[IMAGE:\s*[\s\S]+?\]/i, '').trim();
 
